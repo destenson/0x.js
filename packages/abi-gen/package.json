@@ -1,6 +1,6 @@
 {
   "name": "abi-gen",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Generate contract wrappers from ABI and handlebars templates",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

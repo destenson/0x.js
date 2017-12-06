@@ -1,6 +1,6 @@
 {
   "name": "@0xproject/web3-wrapper",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Wraps around web3 and gives a nicer interface",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -28,8 +28,8 @@
     "web3-typescript-typings": "^0.7.2"
   },
   "dependencies": {
-    "@0xproject/utils": "^0.0.0",
-    "@0xproject/types": "^0.0.0",
+    "@0xproject/utils": "^0.0.1",
+    "@0xproject/types": "^0.0.1",
     "bignumber.js": "~4.1.0",
     "lodash": "^4.17.4",
     "web3": "^0.20.0"

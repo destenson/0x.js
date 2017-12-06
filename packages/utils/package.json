@@ -1,6 +1,6 @@
 {
   "name": "@0xproject/utils",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "0x TS utils",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
