@@ -19,7 +19,7 @@ import {
 } from '../src';
 import {BlockParamLiteral, DoneCallback} from '../src/types';
 import {promisify} from '../src/utils/promisify';
-import {Web3Wrapper} from '../src/web3_wrapper';
+import {Web3Wrapper} from '@0xproject/web3_wrapper';
 
 import {BlockchainLifecycle} from './utils/blockchain_lifecycle';
 import {chaiSetup} from './utils/chai_setup';

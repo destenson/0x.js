@@ -13,7 +13,7 @@
     "clean": "rm -rf ./lib",
     "migrate:truffle": "npm run build; truffle migrate",
     "migrate": "npm run build; node lib/deploy/cli.js migrate",
-    "lint": "tslint --project . 'migrations/*.ts' 'test/**/*.ts' 'util/*.ts' 'deploy/**/*.ts'",
+    "lint": "tslint --project . 'migrations/**/*.ts' 'test/**/*.ts' 'util/**/*.ts' 'deploy/**/*.ts'",
     "test:deployer": "npm run build; mocha lib/deploy/test/*_test.js"
   },
   "repository": {
