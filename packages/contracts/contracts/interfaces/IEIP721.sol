@@ -7,7 +7,6 @@ contract IEIP821 is IEIP20Optional {
     
     bytes4 constant INTERFACE_ID =
         IEIP20Optional.INTERFACE_ID ^
-        bytes4(keccak256('description()')) ^
         bytes4(keccak256('isERC821()')) ^
         bytes4(keccak256('totalSupply()')) ^
         bytes4(keccak256('balanceOf(address)')) ^
