@@ -182,12 +182,16 @@ export class Compiler {
 
         if (!_.isUndefined(compiled.errors)) {
             _.each(compiled.errors, errMsg => {
+                console.log(errMsg);
                 const normalizedErrMsg = Compiler._getNormalizedErrMsg(errMsg);
                 this._solcErrors.add(normalizedErrMsg);
             });
         }
 
         const contractIdentifier = `${contractBaseName}:${contractName}`;
+        if(!compiled.contracts[contractIdentifier]) {
+          return;
+        }
         const abi: Web3.ContractAbi = JSON.parse(compiled.contracts[contractIdentifier].interface);
         const unlinked_binary = `0x${compiled.contracts[contractIdentifier].bytecode}`;
         const updated_at = Date.now();
