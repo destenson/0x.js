@@ -260,7 +260,7 @@ describe('Exchange', () => {
             });
         });
 
-        describe('fillOrdersUpTo', () => {
+        describe.skip('fillOrdersUpTo', () => {
             it('should stop when the entire fillTakerTokenAmount is filled', async () => {
                 const fillTakerTokenAmount = orders[0].params.takerTokenAmount.plus(
                     orders[1].params.takerTokenAmount.div(2),
