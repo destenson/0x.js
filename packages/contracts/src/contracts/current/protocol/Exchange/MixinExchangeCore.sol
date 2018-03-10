@@ -18,6 +18,7 @@
 
 pragma solidity ^0.4.21;
 pragma experimental ABIEncoderV2;
+pragma experimental "v0.5.0";
 
 import "./mixins/MExchangeCore.sol";
 import "./mixins/MSettlement.sol";
@@ -49,7 +50,7 @@ contract MixinExchangeCore is
     // Current signer of transaction.
     address currentSigner = address(0);
 
-    event LogFill(
+    event Fill(
         address indexed makerAddress,
         address takerAddress,
         address indexed feeRecipientAddress,
@@ -62,7 +63,7 @@ contract MixinExchangeCore is
         bytes32 indexed orderHash
     );
 
-    event LogCancel(
+    event Cancel(
         address indexed makerAddress,
         address indexed feeRecipientAddress,
         address makerTokenAddress,
@@ -89,7 +90,7 @@ contract MixinExchangeCore is
     {
         bytes32 transactionHash = keccak256(salt, data);
 
-        // Check if transaction already executed
+        // Validate transaction has not been execute
         require(!transactions[transactionHash]);
 
         // Validate signature
@@ -143,7 +144,7 @@ contract MixinExchangeCore is
 
         // Validate order expiration
         if (block.timestamp >= order.expirationTimeSeconds) {
-            LogError(uint8(Errors.ORDER_EXPIRED), orderHash);
+            emit ExchangeError(uint8(Errors.ORDER_EXPIRED), orderHash);
             return 0;
         }
         
@@ -151,13 +152,13 @@ contract MixinExchangeCore is
         uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(orderHash));
         takerTokenFilledAmount = min256(takerTokenFillAmount, remainingTakerTokenAmount);
         if (takerTokenFilledAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), orderHash);
+            emit ExchangeError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), orderHash);
             return 0;
         }
         
         // Validate fill order rounding
         if (isRoundingError(takerTokenFilledAmount, order.takerTokenAmount, order.makerTokenAmount)) {
-            LogError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), orderHash);
+            emit ExchangeError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), orderHash);
             return 0;
         }
 
@@ -165,11 +166,14 @@ contract MixinExchangeCore is
         filled[orderHash] = safeAdd(filled[orderHash], takerTokenFilledAmount);
         
         // Settle order
-        var (makerTokenFilledAmount, makerFeeAmountPaid, takerFeeAmountPaid) =
+        uint256 makerTokenFilledAmount;
+        uint256 makerFeeAmountPaid;
+        uint256 takerFeeAmountPaid;
+        (makerTokenFilledAmount, makerFeeAmountPaid, takerFeeAmountPaid) =
             settleOrder(order, takerAddress, takerTokenFilledAmount);
         
         // Log order
-        LogFill(
+        emit Fill(
             order.makerAddress,
             takerAddress,
             order.feeRecipientAddress,
@@ -212,20 +216,23 @@ contract MixinExchangeCore is
         require(order.makerAddress == makerAddress);
         
         if (block.timestamp >= order.expirationTimeSeconds) {
-            LogError(uint8(Errors.ORDER_EXPIRED), orderHash);
+            emit ExchangeError(uint8(Errors.ORDER_EXPIRED), orderHash);
             return 0;
         }
         
+        // Calculate amount to cancel
         uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(orderHash));
         takerTokenCancelledAmount = min256(takerTokenCancelAmount, remainingTakerTokenAmount);
         if (takerTokenCancelledAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), orderHash);
+            emit ExchangeError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), orderHash);
             return 0;
         }
         
+        // Update state
         cancelled[orderHash] = safeAdd(cancelled[orderHash], takerTokenCancelledAmount);
         
-        LogCancel(
+        // Log cancel
+        emit Cancel(
             order.makerAddress,
             order.feeRecipientAddress,
             order.makerTokenAddress,
