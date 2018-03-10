@@ -23,6 +23,7 @@ contract LibOrder {
     
     bytes32 constant ORDER_SCHEMA_HASH = keccak256(
         "address exchangeAddress",
+        "address senderAddress",
         "address makerAddress",
         "address takerAddress",
         "address makerTokenAddress",
@@ -37,6 +38,7 @@ contract LibOrder {
     );
     
     struct Order {
+        address senderAddress;
         address makerAddress;
         address takerAddress;
         address makerTokenAddress;
@@ -62,6 +64,7 @@ contract LibOrder {
             ORDER_SCHEMA_HASH,
             keccak256(
                 address(this),
+                order.senderAddress,
                 order.makerAddress,
                 order.takerAddress,
                 order.makerTokenAddress,

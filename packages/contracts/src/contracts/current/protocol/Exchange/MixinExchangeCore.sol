@@ -43,6 +43,12 @@ contract MixinExchangeCore is
     mapping (bytes32 => uint256) public filled;
     mapping (bytes32 => uint256) public cancelled;
     
+    // Mapping of transactionHash => executed.
+    mapping(bytes32 => bool) transactions;
+
+    // Current signer of transaction.
+    address currentSigner = address(0);
+
     event LogFill(
         address indexed makerAddress,
         address takerAddress,
@@ -70,6 +76,36 @@ contract MixinExchangeCore is
     * Core exchange functions
     */
 
+    /// @dev Executes an exchange method call in the context of signer.
+    /// @param signer Address of transaction signer.
+    /// @param data AbiV2 encoded calldata.
+    /// @param signature Proof of signer transaction by signer.
+    function executeTransaction(
+        uint256 salt,
+        address signer,
+        bytes data,
+        bytes signature)
+        public
+    {
+        bytes32 transactionHash = keccak256(salt, data);
+
+        // Check if transaction already executed
+        require(!transactions[transactionHash]);
+
+        // Validate signature
+        require(isValidSignature(transactionHash, signer, signature));
+
+        // Set the current transaction signer
+        currentSigner = signer;
+
+        // Execute transaction
+        transactions[transactionHash] = true;
+        require(address(this).delegatecall(data) == true);
+
+        // Reset current transaction signer
+        currentSigner = address(0);
+    }
+
     /// @dev Fills the input order.
     /// @param order Order struct containing order specifications.
     /// @param takerTokenFillAmount Desired amount of takerToken to fill.
@@ -93,9 +129,15 @@ contract MixinExchangeCore is
             require(isValidSignature(orderHash, order.makerAddress, signature));
         }
         
-        // Validate taker
+        // Validate sender
+        if (order.senderAddress != address(0)) {
+            require(order.senderAddress == msg.sender);
+        }
+
+        // Validate transaction signed by taker
+        address takerAddress = currentSigner == address(0) ? msg.sender : currentSigner;
         if (order.takerAddress != address(0)) {
-            require(order.takerAddress == msg.sender);
+            require(order.takerAddress == takerAddress);
         }
         require(takerTokenFillAmount > 0);
 
@@ -124,12 +166,12 @@ contract MixinExchangeCore is
         
         // Settle order
         var (makerTokenFilledAmount, makerFeeAmountPaid, takerFeeAmountPaid) =
-            settleOrder(order, msg.sender, takerTokenFilledAmount);
+            settleOrder(order, takerAddress, takerTokenFilledAmount);
         
         // Log order
         LogFill(
             order.makerAddress,
-            msg.sender,
+            takerAddress,
             order.feeRecipientAddress,
             order.makerTokenAddress,
             order.takerTokenAddress,
@@ -159,7 +201,15 @@ contract MixinExchangeCore is
         require(order.makerTokenAmount > 0);
         require(order.takerTokenAmount > 0);
         require(takerTokenCancelAmount > 0);
-        require(order.makerAddress == msg.sender);
+
+        // Validate sender
+        if (order.senderAddress != address(0)) {
+            require(order.senderAddress == msg.sender);
+        }
+        
+        // Validate transaction signed by maker
+        address makerAddress = currentSigner == address(0) ? msg.sender : currentSigner;
+        require(order.makerAddress == makerAddress);
         
         if (block.timestamp >= order.expirationTimeSeconds) {
             LogError(uint8(Errors.ORDER_EXPIRED), orderHash);
